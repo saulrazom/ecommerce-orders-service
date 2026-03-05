@@ -1,86 +1,110 @@
-# E-Commerce Microservices — Database Structure
-
-This document describes the **data structures used in DynamoDB** for the E-Commerce Microservices project.  
-The system is composed of **two backend microservices**, each with its own database table.
-
-- **Products Service** → manages the product catalog and stock
-- **Orders Service** → manages customer orders
-
-Each service follows the microservices principle of **owning its own data**.
-
----
-
-# Database Overview
-
-Two DynamoDB tables are used:
-
-| Table Name | Service | Purpose |
-|-------------|--------|--------|
-| `Products` | Products Service | Stores the product catalog and stock |
-| `Orders` | Orders Service | Stores orders created by customers |
-
----
-
-# Products Table
-
-This table stores all product information available in the store.
-
-## Table Name
-
-Products
 
 
-## Primary Key
-
-productId (String)
 
 
-## Product Document Structure
 
-Each product stored in the table follows this structure:
+## Orders Table
 
+This table stores customer orders created during checkout.
+
+Table Name
+Orders
+Primary Key
+orderId (String)
+Order Document Structure
+
+Each order stored in the table follows this structure:
 ```json
 {
-  "productId": "string",
-  "name": "string",
-  "description": "string",
-  "category": "string",
-  "price": 0,
+  "orderId": "string",
+  "userId": "string",
+  "status": "PENDING | CONFIRMED | PAID | CANCELLED",
+  "items": [
+    {
+      "productId": "string",
+      "productName": "string",
+      "price": 0,
+      "quantity": 0,
+      "total": 0
+    }
+  ],
+  "subtotal": 0,
+  "total": 0,
   "currency": "string",
-  "stock": 0,
-  "isActive": true,
   "createdAt": "ISO_DATE",
   "updatedAt": "ISO_DATE"
 }
 ```
 
-## Example Product
+## Example Order
 ```json
 {
-  "productId": "P001",
-  "name": "Wireless Mouse",
-  "description": "Ergonomic wireless mouse",
-  "category": "ACCESSORIES",
-  "price": 399.99,
+  "orderId": "O001",
+  "userId": "U123",
+  "status": "PENDING",
+  "items": [
+    {
+      "productId": "P001",
+      "productName": "Wireless Mouse",
+      "price": 399.99,
+      "quantity": 2,
+      "total": 799.98
+    }
+  ],
+  "subtotal": 799.98,
+  "total": 799.98,
   "currency": "MXN",
-  "stock": 50,
-  "isActive": true,
-  "createdAt": "2026-03-05T18:30:00Z",
-  "updatedAt": "2026-03-05T18:30:00Z"
+  "createdAt": "2026-03-05T19:00:00Z",
+  "updatedAt": "2026-03-05T19:00:00Z"
 }
 ```
 
-| Field       | Type    | Description                           |
-| ----------- | ------- | ------------------------------------- |
-| productId   | String  | Unique identifier of the product      |
-| name        | String  | Product name                          |
-| description | String  | Product description                   |
-| category    | String  | Product category                      |
-| price       | Number  | Product price                         |
-| currency    | String  | Currency used for the price           |
-| stock       | Number  | Available stock quantity              |
-| isActive    | Boolean | Indicates if the product is available |
-| createdAt   | String  | Creation timestamp                    |
-| updatedAt   | String  | Last update timestamp                 |
+| Field     | Type   | Description                                  |
+| --------- | ------ | -------------------------------------------- |
+| orderId   | String | Unique identifier of the order               |
+| userId    | String | Identifier of the user who created the order |
+| status    | String | Current order status                         |
+| items     | Array  | List of products included in the order       |
+| subtotal  | Number | Total before taxes or extra fees             |
+| total     | Number | Final order total                            |
+| currency  | String | Currency used                                |
+| createdAt | String | Order creation timestamp                     |
+| updatedAt | String | Last update timestamp                        |
 
+## Order Status Values
 
+Orders can have the following statuses:
+
+| Status    | Description                            |
+| --------- | -------------------------------------- |
+| PENDING   | Order created but not processed        |
+| CONFIRMED | Order confirmed after stock validation |
+| PAID      | Payment processed successfully         |
+| CANCELLED | Order cancelled                        |
+
+## Microservice Data Ownership
+
+Each microservice only accesses its own table.
+
+| Service          | Database Table |
+| ---------------- | -------------- |
+| Products Service | `Products`     |
+| Orders Service   | `Orders`       |
+
+Communication between services happens via REST API, not direct database access.
+
+## Example:
+
+- Orders Service calls Products Service to check stock
+
+- Orders Service calls Products Service to update stock
+
+## Summary
+
+The system uses two DynamoDB tables to support the microservice architecture:
+
+- Products Table → manages product catalog and inventory
+
+- Orders Table → manages customer orders and purchased items
+
+Each service maintains independent data ownership, ensuring a clean separation between microservices.
