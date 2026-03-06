@@ -1,8 +1,8 @@
 # Usamos la última versión LTS (Long Term Support)
-FROM node:22-alpine
+FROM public.ecr.aws/lambda/nodejs:22
 
 # Directorio de trabajo
-WORKDIR /app
+WORKDIR /var/task
 
 # Copiamos archivos de dependencias
 COPY package*.json ./
@@ -13,8 +13,5 @@ RUN npm install --omit=dev
 # Copiamos el resto del código fuente
 COPY . .
 
-# Exponemos el puerto
-EXPOSE 3000
-
-# Comando para arrancar
-CMD ["npm", "start"]
+# Comando que ejecutará Lambda (Archivo.FunciónExportada)
+CMD [ "src/index.handler" ]
