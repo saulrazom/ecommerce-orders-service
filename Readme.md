@@ -1,9 +1,6 @@
 
 
-
-
-
-## Orders Table
+# Orders Table
 
 This table stores customer orders created during checkout.
 
@@ -108,3 +105,34 @@ The system uses two DynamoDB tables to support the microservice architecture:
 - Orders Table → manages customer orders and purchased items
 
 Each service maintains independent data ownership, ensuring a clean separation between microservices.
+
+
+# Deployment and Configuration
+Prerequisites
+- Node.js: v22.x
+- AWS Account: with a DynamoDB table named Orders
+
+
+## Environment Variables
+Create a `.env` file in the root directory
+
+```
+PORT=the-port-your-service-will-run-on
+ORDERS_TABLE=Orders
+PRODUCTS_SERVICE_URL=http://url-de-tu-api-gateway-o-lambda
+ENV=dev/prod
+AWS_REGION=your-aws-region
+# AWS Credentials
+AWS_ACCESS_KEY_ID=your-aws-access-key-id
+AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
+AWS_SESSION_TOKEN=your-aws-session-token-if-applicable
+```
+(See `.env.example` for reference)
+
+
+## API Endpoints
+| Endpoint            | Method  | Description                          |
+| ------------------  | ------  | ------------------------------------ |
+| /health             | GET     | Service health checks                |
+| /orders             | GET     | Get all orders                       |
+| /orders/{orderId}   | GET     | Get order details by orderId         |
