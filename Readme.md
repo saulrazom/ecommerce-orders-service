@@ -109,8 +109,9 @@ Each service maintains independent data ownership, ensuring a clean separation b
 
 # Deployment and Configuration
 Prerequisites
-- Node.js: v22.x
-- AWS Account: with a DynamoDB table named Orders
+- **Node.js:** v22.x
+- **Docker:** installed and running
+- **AWS Account:** with a DynamoDB table named Orders
 
 
 ## Environment Variables
@@ -128,6 +129,17 @@ AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
 AWS_SESSION_TOKEN=your-aws-session-token-if-applicable
 ```
 (See `.env.example` for reference)
+
+## Running with Docker
+1. Build the image:
+```bash
+docker build -t orders-service .
+```
+
+2. Run the container:
+```bash
+docker run -p 3000:3000 --env-file .env orders-service
+```
 
 
 ## API Endpoints
