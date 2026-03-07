@@ -42,7 +42,6 @@ Each order stored in the table follows this structure:
   "items": [
     {
       "productId": "P001",
-      "productName": "Wireless Mouse",
       "price": 399.99,
       "quantity": 2,
       "total": 799.98
@@ -159,4 +158,20 @@ When deployed via **API Gateway**, the endpoints will be accessible as follows
 | ------------------  | ------  | ------------------------------------ |
 | /health             | GET     | Service health checks                |
 | /orders             | GET     | Get all orders                       |
+| /orders             | POST    | Create a new order                   |
 | /orders/{orderId}   | GET     | Get order details by orderId         |
+
+### Details:
+
+POST the /orders route needs the following body structure:
+``` json
+{
+  "userId": "string",
+  "items": [
+    {
+      "productId": "string",
+      "quantity": 0
+    }
+  ]
+}
+```
