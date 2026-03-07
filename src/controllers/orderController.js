@@ -1,5 +1,5 @@
 const docClient = require('../config/db');
-const { GetCommand, ScanCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
+const { GetCommand, ScanCommand, PutCommand, DeleteCommand} = require("@aws-sdk/lib-dynamodb");
 const { v4: uuidv4 } = require('uuid');
 const productsService = require('../services/productsService');
 const paymentService = require('../services/paymentsService');
@@ -182,4 +182,27 @@ exports.putOrder = async (req, res) => {
     } catch (error) {
         res.status(500).json({error: "Error al actualizar la orden", details: error.message});
     }
+}
+
+exports.deleteOrder = async (req, res) => {
+    try {
+        const result = await docClient.send(new DeleteCommand({
+            TableName: process.env.ORDERS_TABLE,
+            Key: { orderId: req.params.id },
+            ReturnValues: "ALL_OLD"
+        }));
+
+        if (!result.Attributes) {
+            return res.status(404).json({ message: "Orden no encontrada" });
+        }
+
+        return res.status(200).json({
+            message: "Orden eliminada",
+            deletedOrder: result.Attributes
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: "Error al eliminar la orden", details: error.message });
+    }
+
 }
