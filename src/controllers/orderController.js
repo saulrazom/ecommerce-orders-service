@@ -1,5 +1,5 @@
 const docClient = require('../config/db');
-const { GetCommand, ScanCommand, PutCommand, DeleteCommand} = require("@aws-sdk/lib-dynamodb");
+const { GetCommand, ScanCommand, PutCommand, UpdateCommand, DeleteCommand} = require("@aws-sdk/lib-dynamodb");
 const { v4: uuidv4 } = require('uuid');
 const productsService = require('../services/productsService');
 const paymentService = require('../services/paymentsService');
@@ -147,39 +147,33 @@ exports.putOrder = async (req, res) => {
             })
         }
         
-        order = await findOrderById(req.params.id);
-        // Si no existe la orden devuevlo esa respuesta
-        if (!order) {
-            return res.status(404).json({ message: "Orden no encontrada" });
-        }
-
-        // Actualizar la orden
-        // Si tienen el mismo status se mantiene
-        if (order.status === newStatus) {
-            return res.status(200).json({
-                message: `El estado ya era '${order.status}', no se realizaron cambios`,
-                order
-            });
-        }
-
-        order.status = newStatus
-
-        // Actualizar en DynamoDB
-        await docClient.send(new PutCommand({
+        // Actualizar la orden 
+        // Si el status ya era el mismo o no existe la orden, dynamo lanza ConditionalCheckFailedException
+        const result = await docClient.send(new UpdateCommand({
             TableName: process.env.ORDERS_TABLE,
-            Item: order
-        }))
+            Key: { orderId: req.params.id },
+            UpdateExpression: "SET #s = :newStatus",
+            ConditionExpression: "attribute_exists(orderId) AND #s <> :newStatus",
+            ExpressionAttributeNames: { "#s": "status" },
+            ExpressionAttributeValues: { ":newStatus": newStatus },
+            ReturnValues: "ALL_NEW"
+        }));
 
+        const updatedOrder = result.Attributes;
+        
         // Si se pasó a confirmed o paid, descontar stock
-        if (["PAID", "CONFIRMED"].includes(order.status)) {
-            for (const item of order.items) {
+        if (["PAID", "CONFIRMED"].includes(updatedOrder.status)) {
+            for (const item of updatedOrder.items) {
                 await productsService.updateProductStock(item.productId, item.quantity);
             }
         }
 
-        res.status(200).json(order)
+        res.status(200).json(updatedOrder)
 
     } catch (error) {
+        if (error.name === "ConditionalCheckFailedException") {
+            return res.status(404).json({ message: "Orden no encontrada o sin cambios" });
+        }
         res.status(500).json({error: "Error al actualizar la orden", details: error.message});
     }
 }
