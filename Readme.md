@@ -159,7 +159,8 @@ When deployed via **API Gateway**, the endpoints will be accessible as follows
 | /health             | GET     | Service health checks                |
 | /orders             | GET     | Get all orders                       |
 | /orders             | POST    | Create a new order                   |
-| /orders/{orderId}   | GET     | Get order details by orderId         |
+| /orders/{id}        | GET     | Get order details by orderId         |
+| /orders/{id}/status | PUT     | Modify status of an order            |
 
 ### Details:
 
@@ -173,5 +174,12 @@ POST the /orders route needs the following body structure:
       "quantity": 0
     }
   ]
+}
+```
+
+PUT the /orders/:id/status route needs the following body structure:
+``` json
+{
+  "status": "PENDING | CONFIRMED | PAID | CANCELLED"
 }
 ```

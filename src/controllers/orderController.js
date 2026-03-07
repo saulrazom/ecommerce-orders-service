@@ -127,19 +127,59 @@ exports.postOrder = async (req, res) => {
     }
 }
 
-// Obtener una orden por ID
-exports.getOrderById = async (req, res) => {
+exports.putOrder = async (req, res) => {
     try {
-        const data = await docClient.send(new GetCommand({
-            TableName: process.env.ORDERS_TABLE,
-            Key: { orderId: req.params.id }
-        }));
+        const statusValues = ["PAID", "CONFIRMED", "PENDING", "CANCELLED"];
+
+        // Validar que el body tenga el nuevo status
+        if (!req.body || !req.body.status) {
+            return res.status(400).json({
+                error: "Missing required field: status"
+            })
+        }
+        const newStatus = req.body.status;
+
+        // Validar que se introduce un status válido
+        if (!statusValues.includes(newStatus)){
+            return res.status(400).json({
+                error: "Invalid status value",
+                allowed_values: statusValues
+            })
+        }
         
-        if (!data.Item) {
+        order = await findOrderById(req.params.id);
+        // Si no existe la orden devuevlo esa respuesta
+        if (!order) {
             return res.status(404).json({ message: "Orden no encontrada" });
         }
-        res.json(data.Item);
+
+        // Actualizar la orden
+        // Si tienen el mismo status se mantiene
+        if (order.status === newStatus) {
+            return res.status(200).json({
+                message: `El estado ya era '${order.status}', no se realizaron cambios`,
+                order
+            });
+        }
+
+        order.status = newStatus
+
+        // Actualizar en DynamoDB
+        await docClient.send(new PutCommand({
+            TableName: process.env.ORDERS_TABLE,
+            Item: order
+        }))
+
+        // Si se pasó a confirmed o paid, descontar stock
+        if (["PAID", "CONFIRMED"].includes(order.status)) {
+            for (const item of order.items) {
+                await productsService.updateProductStock(item.productId, item.quantity);
+            }
+        }
+
+        res.status(200).json(order)
+
     } catch (error) {
-        res.status(500).json({ error: "Error al buscar la orden", details: error.message });
+        res.status(500).json({error: "Error al actualizar la orden", details: error.message});
     }
-};
+}
