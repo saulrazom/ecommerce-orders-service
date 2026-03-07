@@ -16,6 +16,34 @@ exports.getAllOrders = async (req, res) => {
     }
 };
 
+async function findOrderById(orderId){
+    try {
+        const data = await docClient.send(new GetCommand({
+            TableName: process.env.ORDERS_TABLE,
+            Key: { orderId }
+        }));
+
+        return data.Item || null;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Obtener una orden por ID
+exports.getOrderById = async (req, res) => {
+    try {
+        const order = await findOrderById(req.params.id);
+        
+        if (!order) {
+            return res.status(404).json({ message: "Orden no encontrada" });
+        }
+        return res.status(200).json(order);
+    } catch (error) {
+        res.status(500).json({ error: "Error al buscar la orden", details: error.message });
+    }
+};
+
+// Crear una nueva orden
 exports.postOrder = async (req, res) => {
     try {
         const { userId, items, currency} = req.body
