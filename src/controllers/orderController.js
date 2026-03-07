@@ -1,6 +1,6 @@
 const docClient = require('../config/db');
 const { GetCommand, ScanCommand, PutCommand, UpdateCommand, DeleteCommand} = require("@aws-sdk/lib-dynamodb");
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const productsService = require('../services/productsService');
 const paymentService = require('../services/paymentsService');
 
@@ -92,7 +92,7 @@ exports.postOrder = async (req, res) => {
 
         // Crear orden
         const newOrder = {
-            "orderId": uuidv4(),
+            "orderId": randomUUID(),
             "userId": userId,
             "status": paymentResponse.status,
             "items": processedItems,
