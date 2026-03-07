@@ -1,9 +1,6 @@
 
 
-
-
-
-## Orders Table
+# Orders Table
 
 This table stores customer orders created during checkout.
 
@@ -45,7 +42,6 @@ Each order stored in the table follows this structure:
   "items": [
     {
       "productId": "P001",
-      "productName": "Wireless Mouse",
       "price": 399.99,
       "quantity": 2,
       "total": 799.98
@@ -108,3 +104,82 @@ The system uses two DynamoDB tables to support the microservice architecture:
 - Orders Table → manages customer orders and purchased items
 
 Each service maintains independent data ownership, ensuring a clean separation between microservices.
+
+
+# Deployment and Configuration
+Prerequisites
+- **Node.js:** v22.x
+- **Docker:** installed and running
+- **AWS Account:** with a DynamoDB table named Orders
+
+
+## Environment Variables
+Create a `.env` file in the root directory
+
+```
+PORT=the-port-your-service-will-run-on
+ORDERS_TABLE=Orders
+PRODUCTS_SERVICE_URL=http://url-de-tu-api-gateway-o-lambda
+ENV=dev/prod
+AWS_REGION=your-aws-region
+# AWS Credentials
+AWS_ACCESS_KEY_ID=your-aws-access-key-id
+AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
+AWS_SESSION_TOKEN=your-aws-session-token-if-applicable
+```
+(See `.env.example` for reference)
+
+## Running with Docker (Local Testing)
+Since the service is now configured for AWS Lambda using the official AWS base image, the container won't respond to standard browser requests on port 3000 directly unless you use the AWS Lambda Runtime Interface Emulator (RIE), which is included in the base image.
+
+1. Build the container:
+```bash
+docker build -t orders-service .
+```
+
+1. Run the container:
+```bash
+docker run -p 9000:8080 --env-file .env orders-service
+```
+*Note: AWS Lambda images internaly listen on port 8080. We map it to 9000 for local testing.*
+
+3. Test the Lambda trigger:
+To test the service locally, you must send a JSON payload that simulates an API Gateway event to the Lambda entry point:
+``` bash
+curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"resource": "/orders", "path": "/orders", "httpMethod": "GET"}'
+```
+
+
+
+## API Endpoints
+When deployed via **API Gateway**, the endpoints will be accessible as follows
+
+| Endpoint            | Method  | Description                          |
+| ------------------  | ------  | ------------------------------------ |
+| /health             | GET     | Service health checks                |
+| /orders             | GET     | Get all orders                       |
+| /orders             | POST    | Create a new order                   |
+| /orders/{id}        | GET     | Get order details by orderId         |
+| /orders/{id}/status | PUT     | Modify status of an order            |
+
+### Details:
+
+POST the /orders route needs the following body structure:
+``` json
+{
+  "userId": "string",
+  "items": [
+    {
+      "productId": "string",
+      "quantity": 0
+    }
+  ]
+}
+```
+
+PUT the /orders/:id/status route needs the following body structure:
+``` json
+{
+  "status": "PENDING | CONFIRMED | PAID | CANCELLED"
+}
+```
