@@ -1,0 +1,14 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18 # O la versión de Node que estén usando
+  pre_build:
+    commands:
+      - echo "Instalando dependencias de Express..."
+      - npm install
+  build:
+    commands:
+      - echo "Ejecutando pruebas de integración..."
+      - npm test
