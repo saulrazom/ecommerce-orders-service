@@ -7,9 +7,14 @@ const getProductById = async (productId) => {
     const PRODUCTS_SERVICE_URL = process.env.PRODUCTS_SERVICE_URL;
     const finalUrl = PRODUCTS_SERVICE_URL + '/products/' + productId;
 
-    console.log(`[Products Service] Consultando producto: ${productId}`);
+    console.log(`[Products Service] URL: ${finalUrl}`);
 
     const response = await fetch(finalUrl);
+    
+    // Agrega estas líneas
+    console.log(`[Products Service] Status: ${response.status}`);
+    const responseText = await response.text();
+    console.log(`[Products Service] Body: ${responseText}`);
 
     if (response.status === 404) {
         return null;
@@ -17,7 +22,7 @@ const getProductById = async (productId) => {
         throw new Error(`Error en Products Service: ${response.statusText}`);
     } 
     
-    return await response.json();
+    return JSON.parse(responseText);
 };
 
 const updateProductStock = async (productId, quantity) => {
